@@ -1,6 +1,7 @@
 # Importación de los modulos
 from typing import Any
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
@@ -51,6 +52,19 @@ class input_validation(TextInput):
         text.text = txt_validation
         text.color = (1, 0, 0, 1)
         text.markup = True
+class Seconds(Label):
+    def __init__(self, total, **kwargs):
+        self.total = total
+        self.current = self.total
+        my_text = 'Segundos restantes: ' + str(self.current)
+        super().__init__(text=my_text, **kwargs)
+    def startCounter(self):
+        Clock.schedule_interval(self.total, 1)
+    def changeText(self):
+        self.current -= 1
+        self.text = 'Segundos restantes: ' + str(self.current)
+        if self.current <= 0:
+            return False
 # Pantallas
 class Home(Screen):
     def __init__(self, **kw):
