@@ -8,6 +8,7 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 # Importación de textos
 from instructions import txt_instruction, txt_sits, txt_test1, txt_test2, txt_test3, txt_validation
+from results import resultSuper
 # Colores
 _White = (1, 1, 1, 1)
 _Black = (0, 0, 0, 1)
@@ -176,10 +177,11 @@ class FinalResult(Screen):
         self.add_widget(self.txt)
     def before(self):
         global name
+        global age
         global frt_result
         global snd_result
         global thrd_result
-        self.txt.text = name+'\n'+'Tu índice de Ruffier: '+str(ruffierRate(frt_result, snd_result, thrd_result))
+        self.txt.text = name+'\n'+'Tu índice de Ruffier: '+str(ruffierRate(frt_result, snd_result, thrd_result))+'\n'+resultSuper(age, ruffierRate(frt_result, snd_result, thrd_result))
         
 # Clase main
 class myApp(App):
