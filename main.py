@@ -1,5 +1,4 @@
 # Importación de los modulos
-from typing import Any
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -7,6 +6,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
+from kivy.properties import BooleanProperty
 # Importación de textos
 from instructions import txt_instruction, txt_sits, txt_test1, txt_test2, txt_test3, txt_validation
 from results import resultSuper
@@ -53,17 +53,20 @@ class input_validation(TextInput):
         text.color = (1, 0, 0, 1)
         text.markup = True
 class Seconds(Label):
+    done = BooleanProperty(True)
     def __init__(self, total, **kwargs):
+        self.done = False
         self.total = total
         self.current = self.total
         my_text = 'Segundos restantes: ' + str(self.current)
         super().__init__(text=my_text, **kwargs)
     def startCounter(self):
-        Clock.schedule_interval(self.total, 1)
-    def changeText(self):
+        Clock.schedule_interval(self.changeText, 1)
+    def changeText(self, dt):
         self.current -= 1
         self.text = 'Segundos restantes: ' + str(self.current)
         if self.current <= 0:
+            self.done = True
             return False
 # Pantallas
 class Home(Screen):
@@ -111,25 +114,35 @@ class Screen1(Screen):
         result_input = BoxLayout(size_hint_y=.3)
         # Texts
         self.txt = Label(text=txt_test1)
+        self.seconds = Seconds(15)
+        self.seconds.bind(done=self.sec_finished)
         result_txt = Label(text='Ingresar el resultado:', size_hint_x=.3)
         # Inputs
         self.result_inp = input_validation(multiline=False, size_hint=(.8, None), height='30sp', pos_hint={'center_y': .5})
+        self.result_inp.disabled = True
         # Botones
-        next_btn = Button(text='Siguiente', size_hint=(.3, .2), pos_hint={'center_x':.5, 'center_y':.5})
-        next_btn.bind(on_press=lambda instance: self.changeScreen('screen2'))
+        self.next_btn = Button(text='Iniciar', size_hint=(.3, .2), pos_hint={'center_x':.5, 'center_y':.5})
+        self.next_btn.bind(on_press=lambda instance: self.changeScreen('screen2'))
         # Organización
         result_input.add_widget(result_txt)
         result_input.add_widget(self.result_inp)
         main.add_widget(self.txt)
+        main.add_widget(self.seconds)
         main.add_widget(result_input)
-        main.add_widget(next_btn)
+        main.add_widget(self.next_btn)
         self.add_widget(main)
+    def sec_finished(self, *args):
+        self.result_inp.disabled = False
+        self.next_btn.text = 'Siguiente'
     def changeScreen(self, screen_name):
         global frt_result
-        frt_result = self.result_inp.validar(True, self.txt)
-        if not frt_result:
-            return False
-        self.manager.current = screen_name
+        if self.seconds.done == True:
+            frt_result = self.result_inp.validar(True, self.txt)
+            if not frt_result:
+                return False
+            self.manager.current = screen_name
+        else:
+            self.seconds.startCounter()
 # Pantalla 2
 class Screen2(Screen):
     def __init__(self, **kw):
@@ -137,16 +150,24 @@ class Screen2(Screen):
         # Layouts
         main = BoxLayout(orientation='vertical', padding=15, spacing=8)
         # Texts
-        txt = Label(text=txt_sits)
+        txt = Label(text=txt_test2)
+        self.seconds = Seconds(45)
+        self.seconds.bind(done = self.sec_finished)
         # Botones
-        next_btn = Button(text='Siguiente', size_hint=(.3, .2), pos_hint={'center_x':.5, 'center_y':.5})
-        next_btn.bind(on_press=lambda instance: self.changeScreen('screen3'))
+        self.next_btn = Button(text='Iniciar', size_hint=(.3, .2), pos_hint={'center_x':.5, 'center_y':.5})
+        self.next_btn.bind(on_press=lambda instance: self.changeScreen('screen3'))
         # Organización
         main.add_widget(txt)
-        main.add_widget(next_btn)
+        main.add_widget(self.seconds)
+        main.add_widget(self.next_btn)
         self.add_widget(main)
+    def sec_finished(self, *args):
+        self.next_btn.text = 'Siguiente'
     def changeScreen(self, screen_name):
-        self.manager.current = screen_name
+        if self.seconds.done == True:
+            self.manager.current = screen_name
+        else:
+            self.seconds.startCounter()
 # Pantalla 3
 class Screen3(Screen):
     def __init__(self, **kw):
@@ -195,7 +216,7 @@ class FinalResult(Screen):
         global frt_result
         global snd_result
         global thrd_result
-        self.txt.text = name+'\n'+'Tu índice de Ruffier: '+str(ruffierRate(frt_result, snd_result, thrd_result))+'\n'+resultSuper(age, ruffierRate(frt_result, snd_result, thrd_result))
+        self.txt.text = name + '\n' + 'Tu índice de Ruffier: ' + str(ruffierRate(frt_result, snd_result, thrd_result)) + '\n' + resultSuper(age, ruffierRate(frt_result, snd_result, thrd_result))
         
 # Clase main
 class myApp(App):
