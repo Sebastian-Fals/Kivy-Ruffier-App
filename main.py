@@ -1,4 +1,5 @@
 # Importación de los modulos
+from kivy.core.window import Window
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -14,6 +15,8 @@ from results import resultSuper
 _White = (1, 1, 1, 1)
 _Black = (0, 0, 0, 1)
 _Red = (1, 0, 0, 1)
+# Color fondo
+Window.clearcolor = _White
 # Variables
 name: str = ''
 age: int = 0
@@ -60,13 +63,14 @@ class Seconds(Label):
         self.current = self.total
         my_text = 'Segundos restantes: ' + str(self.current)
         super().__init__(text=my_text, **kwargs)
-    def startCounter(self):
-        Clock.schedule_interval(self.changeText, 1)
+    def startCounter(self, *args):
+        self.current = self.total
+        Clock.schedule_interval(self.changeText, 0.5)
     def changeText(self, dt):
         self.current -= 1
         self.text = 'Segundos restantes: ' + str(self.current)
         if self.current <= 0:
-            self.done = True
+            self.done = not self.done
             return False
 # Pantallas
 class Home(Screen):
@@ -77,9 +81,9 @@ class Home(Screen):
         name_input = BoxLayout(size_hint_y=.3)
         age_input = BoxLayout(size_hint_y=.3)
         # Textos
-        self.txt = Label(text=txt_instruction)
-        name_txt = Label(text='Ingresa tu nombre:', size_hint_x=.3)
-        age_txt = Label(text='Ingresa tu edad:', size_hint_x=.3)
+        self.txt = Label(text=txt_instruction, color = _Black)
+        name_txt = Label(text='Ingresa tu nombre:', size_hint_x=.3, color = _Black)
+        age_txt = Label(text='Ingresa tu edad:', size_hint_x=.3, color = _Black)
         # Inputs
         self.name_inp = input_validation(multiline=False, size_hint=(.8, None), height='30sp', pos_hint={'center_y': .5})
         self.age_inp = input_validation(multiline=False, size_hint=(.8, None), height='30sp',pos_hint={'center_y': .5})
@@ -113,10 +117,10 @@ class Screen1(Screen):
         main = BoxLayout(orientation='vertical', padding=15, spacing=8)
         result_input = BoxLayout(size_hint_y=.3)
         # Texts
-        self.txt = Label(text=txt_test1)
-        self.seconds = Seconds(15)
+        self.txt = Label(text=txt_test1, color = _Black)
+        self.seconds = Seconds(15, color = _Black)
         self.seconds.bind(done=self.sec_finished)
-        result_txt = Label(text='Ingresar el resultado:', size_hint_x=.3)
+        result_txt = Label(text='Ingresar el resultado:', size_hint_x=.3, color = _Black)
         # Inputs
         self.result_inp = input_validation(multiline=False, size_hint=(.8, None), height='30sp', pos_hint={'center_y': .5})
         self.result_inp.disabled = True
@@ -150,8 +154,8 @@ class Screen2(Screen):
         # Layouts
         main = BoxLayout(orientation='vertical', padding=15, spacing=8)
         # Texts
-        txt = Label(text=txt_test2)
-        self.seconds = Seconds(45)
+        txt = Label(text=txt_test2, color = _Black)
+        self.seconds = Seconds(45, color = _Black)
         self.seconds.bind(done = self.sec_finished)
         # Botones
         self.next_btn = Button(text='Iniciar', size_hint=(.3, .2), pos_hint={'center_x':.5, 'center_y':.5})
@@ -177,37 +181,53 @@ class Screen3(Screen):
         result1_input = BoxLayout(size_hint_y=.3)
         result2_input = BoxLayout(size_hint_y=.3)
         # Texts
-        self.txt = Label(text=txt_test3)
-        result1_txt = Label(text='Resultado:', size_hint_x=.3)
-        result2_txt = Label(text='Resultado despues del descanso:', size_hint_x=.3)
+        self.txt = Label(text=txt_test3, color = _Black)
+        result1_txt = Label(text='Resultado:', size_hint_x=.3, color = _Black)
+        result2_txt = Label(text='Resultado despues del descanso:', size_hint_x=.3, color = _Black)
+        self.seconds = Seconds(15, color = _Black)
+        self.seconds.bind(done = self.sec_finished)
+        self.finished = False
         # Inputs
-        self.result1_inp = input_validation(multiline=False, size_hint=(.8, None), height='30sp', pos_hint={'center_y': .5})
-        self.result2_inp = input_validation(multiline=False, size_hint=(.8, None), height='30sp', pos_hint={'center_y': .5})
+        self.result1_inp = input_validation(multiline=False, size_hint=(.8, None), height='30sp', pos_hint={'center_y': .5}, disabled = True)
+        self.result2_inp = input_validation(multiline=False, size_hint=(.8, None), height='30sp', pos_hint={'center_y': .5}, disabled = True)
         # Botones
-        next_btn = Button(text='Finalizar', size_hint=(.3, .2), pos_hint={'center_x':.5, 'center_y':.5})
-        next_btn.bind(on_press=lambda instance: self.changeScreen('screen4'))
+        self.next_btn = Button(text='Finalizar', size_hint=(.3, .2), pos_hint={'center_x':.5, 'center_y':.5})
+        self.next_btn.bind(on_press=lambda instance: self.changeScreen('screen4'))
         # Organización
         result1_input.add_widget(result1_txt)
         result1_input.add_widget(self.result1_inp)
         result2_input.add_widget(result2_txt)
         result2_input.add_widget(self.result2_inp)
         main.add_widget(self.txt)
+        main.add_widget(self.seconds)
         main.add_widget(result1_input)
         main.add_widget(result2_input)
-        main.add_widget(next_btn)
+        main.add_widget(self.next_btn)
         self.add_widget(main)
+    def sec_finished(self,*args):
+        if not self.finished:
+            self.result1_inp.disabled = False
+            self.finished = True
+            self.next_btn.disabled = False
+            self.seconds.text = 'Descansa'
+            Clock.schedule_interval(self.seconds.startCounter, 45)
+        else:
+            self.result2_inp.disabled = False
+            self.seconds.done = True
     def changeScreen(self, screen_name):
         global snd_result
         global thrd_result
-        snd_result = self.result1_inp.validar(True, self.txt)
-        thrd_result = self.result2_inp.validar(True, self.txt)
-        if not snd_result or not thrd_result:
-            return False
-        self.manager.current = screen_name
+        self.seconds.startCounter()
+        if self.seconds.done == True:
+            snd_result = self.result1_inp.validar(True, self.txt)
+            thrd_result = self.result2_inp.validar(True, self.txt)
+            if not snd_result or not thrd_result:
+                return False
+            self.manager.current = screen_name
 class FinalResult(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)
-        self.txt = Label(text='')
+        self.txt = Label(text='', color = _Black)
         self.on_enter = self.before
         self.add_widget(self.txt)
     def before(self):
